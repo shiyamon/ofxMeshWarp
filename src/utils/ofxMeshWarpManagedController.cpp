@@ -41,10 +41,15 @@ void ManagedController::clear()
 }
 void ManagedController::draw()
 {
+    // draw meshes
 	for_each(meshes_.begin(), meshes_.end(), [&](Mesh *m){m->drawWireframe();});
+    
+    // draw point controller
 	if(is_mover_active_) {
 		mover_.drawCustom();
 	}
+    
+    // draw divide-line
 	if(is_divider_active_) {
 		divider_.drawCustom();
 	}

@@ -232,39 +232,47 @@ vector<MeshPoint*> Mesh::getPoints()
 
 void Mesh::drawMesh()
 {
-	if(child_mesh_resolution_ > 1) {
-		drawChildMesh();
-	}
-	else {
-		glBegin(GL_TRIANGLES);
-		if(ofGetUsingArbTex()) {
-			for(int y = 0; y < div_y_-1; ++y) {
-				for(int x = 0; x < div_x_-1; ++x) {
-					mesh_[getIndex(x  ,y  )].glArbPoint(uv_size_);
-					mesh_[getIndex(x  ,y+1)].glArbPoint(uv_size_);
-					mesh_[getIndex(x+1,y  )].glArbPoint(uv_size_);
-					
-					mesh_[getIndex(x+1,y  )].glArbPoint(uv_size_);
-					mesh_[getIndex(x  ,y+1)].glArbPoint(uv_size_);
-					mesh_[getIndex(x+1,y+1)].glArbPoint(uv_size_);
-				}
-			}
-		}
-		else {
-			for(int y = 0; y < div_y_-1; ++y) {
-				for(int x = 0; x < div_x_-1; ++x) {
-					mesh_[getIndex(x  ,y  )].glPoint();
-					mesh_[getIndex(x  ,y+1)].glPoint();
-					mesh_[getIndex(x+1,y  )].glPoint();
-					
-					mesh_[getIndex(x+1,y  )].glPoint();
-					mesh_[getIndex(x  ,y+1)].glPoint();
-					mesh_[getIndex(x+1,y+1)].glPoint();
-				}
-			}
-		}
-		glEnd();
-	}
+    ofVboMesh vbo;
+    vbo.setUsage(GL_DYNAMIC_DRAW);
+    vbo.setMode(OF_PRIMITIVE_TRIANGLES);
+    
+    if (child_mesh_resolution_ > 1) {
+        drawChildMesh();
+    }
+    else {
+        
+        ofVec2f uvMult = ofGetUsingArbTex() ? uv_size_ : ofVec2f::one();
+        
+        // add vertices
+        for (int y = 0; y < div_y_; ++y) {
+            for (int x = 0; x < div_x_; ++x) {
+                
+                vbo.addVertex(mesh_[getIndex(x, y)].point());
+                vbo.addTexCoord(mesh_[getIndex(x, y)].coord() * uvMult);
+            }
+        }
+        
+        // add indices
+        for (int y = 0; y < div_y_ - 1; ++y) {
+            for (int x = 0; x < div_x_ - 1; ++x) {
+                
+                int ptIdx0 = div_x_ * y + x;
+                int ptIdx1 = div_x_ * y + x + 1;
+                int ptIdx2 = div_x_ * (y+1) + x;
+                int ptIdx3 = div_x_ * (y + 1) + x + 1;
+                
+                vbo.addIndex(ptIdx0);
+                vbo.addIndex(ptIdx1);
+                vbo.addIndex(ptIdx2);
+                
+                vbo.addIndex(ptIdx1);
+                vbo.addIndex(ptIdx2);
+                vbo.addIndex(ptIdx3);
+            }
+        }
+    }
+    
+    vbo.draw();
 }
 
 Mesh Mesh::makeChildMesh(int x, int y, int resolution)
@@ -303,19 +311,24 @@ void Mesh::drawChildMesh()
 }
 void Mesh::drawWireframe()
 {
+    ofVboMesh vbo;
+    vbo.setUsage(GL_DYNAMIC_DRAW);
+    vbo.setMode(OF_PRIMITIVE_LINE_STRIP);
+    
+    // draw horizontal lines
 	for(int y = 0; y < div_y_; ++y) {
-		glBegin(GL_LINE_STRIP);
-		for(int x = 0; x < div_x_; ++x) {
-			mesh_[getIndex(x,y)].glPoint();
-		}
-		glEnd();
+        vbo.clear();
+        for(int x = 0; x < div_x_; ++x)
+            vbo.addVertex(mesh_[getIndex(x, y)].point());
+        vbo.draw();
 	}
+    
+    // draw vertical lines
 	for(int x = 0; x < div_x_; ++x) {
-		glBegin(GL_LINE_STRIP);
-		for(int y = 0; y < div_y_; ++y) {
-			mesh_[getIndex(x,y)].glPoint();
-		}
-		glEnd();
+        vbo.clear();
+        for(int y = 0; y < div_y_; ++y)
+            vbo.addVertex(mesh_[getIndex(x,y)].point());
+        vbo.draw();
 	}
 }
 void Mesh::drawDetailedWireframe()

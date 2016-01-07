@@ -1,5 +1,6 @@
 #include "ofxMeshWarpController.h"
 #include "ofGraphics.h"
+#include "ofVboMesh.h"
 
 using namespace ofx::MeshWarp;
 using namespace ofx::MeshWarp::Editor;
@@ -280,55 +281,73 @@ void DivideController::drawCustom()
 	for(auto &mesh : meshes_) {
 		mesh->drawWireframe();
 	}
-	if(hit_info_.mesh) {
+    
+    if(hit_info_.mesh) {
+        
 		const auto &points = hit_info_.mesh->getPoints();
+        
+        ofVboMesh vbo;
+        vbo.setUsage(GL_DYNAMIC_DRAW);
+        vbo.setMode(OF_PRIMITIVE_LINE_STRIP);
+        
 		if(isDivide()) {
+            
 			ofPushStyle();
 			if(hit_info_.isLineX()) {
 				const auto &points0 = MeshHelper(hit_info_.mesh).getColPoints(hit_info_.line_index_0);
 				const auto &points1 = MeshHelper(hit_info_.mesh).getColPoints(hit_info_.line_index_1);
 				assert(points0.size() == points1.size());
 				ofSetColor(ofColor::green);
-				glBegin(GL_LINE_STRIP);
-				for(int  i = 0, num = points0.size(); i < num; ++i) {
-					ofPoint p = points0[i]->point().getInterpolated(points1[i]->point(), hit_info_.pos_intersection);
-					glVertex2fv(&p[0]);
-				}
-				glEnd();
+                
+                vbo.clear();
+                for(int  i = 0, num = points0.size(); i < num; ++i) {
+                    vbo.addVertex(points0[i]->point().getInterpolated(points1[i]->point(), hit_info_.pos_intersection));
+                }
+                vbo.draw();
 			}
 			if(hit_info_.isLineY()) {
 				const auto &points0 = MeshHelper(hit_info_.mesh).getRowPoints(hit_info_.line_index_0);
 				const auto &points1 = MeshHelper(hit_info_.mesh).getRowPoints(hit_info_.line_index_1);
 				assert(points0.size() == points1.size());
 				ofSetColor(ofColor::green);
-				glBegin(GL_LINE_STRIP);
-				for(int  i = 0, num = points0.size(); i < num; ++i) {
-					ofPoint p = points0[i]->point().getInterpolated(points1[i]->point(), hit_info_.pos_intersection);
-					glVertex2fv(&p[0]);
-				}
-				glEnd();
+                
+                vbo.clear();
+                for(int  i = 0, num = points0.size(); i < num; ++i) {
+                    vbo.addVertex(points0[i]->point().getInterpolated(points1[i]->point(), hit_info_.pos_intersection));
+                }
+                vbo.draw();
+                
+//				glBegin(GL_LINE_STRIP);
+//				for(int  i = 0, num = points0.size(); i < num; ++i) {
+//					ofPoint p = points0[i]->point().getInterpolated(points1[i]->point(), hit_info_.pos_intersection);
+//					glVertex2fv(&p[0]);
+//				}
+//				glEnd();
 			}
 			ofPopStyle();
 		}
+        
 		if(isReduce()) {
 			ofPushStyle();
 			if(hit_info_.isLineX()) {
 				const auto &points = MeshHelper(hit_info_.mesh).getRowPoints(hit_info_.line_index_0);
 				ofSetColor(ofColor::red);
-				glBegin(GL_LINE_STRIP);
-				for(auto &p : points) {
-					glVertex2f(p->point().x, p->point().y);
-				}
-				glEnd();
+                
+                vbo.clear();
+                for(auto &p : points) {
+                    vbo.addVertex(ofVec3f(p->point()));
+                }
+                vbo.draw();
 			}
 			if(hit_info_.isLineY()) {
 				const auto &points = MeshHelper(hit_info_.mesh).getColPoints(hit_info_.line_index_0);
 				ofSetColor(ofColor::red);
-				glBegin(GL_LINE_STRIP);
-				for(auto &p : points) {
-					glVertex2f(p->point().x, p->point().y);
-				}
-				glEnd();
+                
+                vbo.clear();
+                for(auto &p : points) {
+                    vbo.addVertex(ofVec3f(p->point()));
+                }
+                vbo.draw();
 			}
 			ofPopStyle();
 		}
